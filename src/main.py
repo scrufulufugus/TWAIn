@@ -197,10 +197,17 @@ sprite_positions = [
     (9.5, 15.5, 0),
     (10.0, 15.1, 0),
     (10.5, 15.8, 0),
+
+    # Enemy
+    [19.5, 11.5, 3]
 ]
+
 sprite_zero = []
 
 game = controller.Controller(world_map_empty, sprite_positions)
+
+space = 0
+
 
 while True:
     for event in pygame.event.get():
@@ -210,9 +217,9 @@ while True:
             if event.key == K_ESCAPE or event.key == K_q:
                 sys.exit()
             if event.key == K_m:
-                game.load_map(world_map_empty, sprite_positions)
+                game.load_map(world_map_empty, sprite_positions, game.wm.camera)
             if event.key == K_n:
-                game.load_map(world_map_full, sprite_positions)
+                game.load_map(world_map_full, sprite_positions, game.wm.camera)
             if event.key == K_TAB:
                 print(game.clock.get_fps())
         elif event.type == KEYUP:
@@ -220,4 +227,8 @@ while True:
         else:
             pass
 
-    game.frame()
+    # if space < 20:
+    #     world_map_large[3][space] = 1
+    # space += 1
+
+    game.frame(game.wm.camera)

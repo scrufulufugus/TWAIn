@@ -9,9 +9,6 @@ import sys
 class Controller(object):
 
     def __init__(self, world_map, sprite_positions, cord=(22, 11.5, -1, 0, 0, .66)):
-        self.world_map = world_map
-        self.sprite_positions = sprite_positions
-
         self.t = time.clock()  # time of current frame
         self.old_time = 0.0  # time of previous frame
         pygame.mixer.init()
@@ -20,7 +17,7 @@ class Controller(object):
         size = w, h = 1920, 1080
         pygame.init()
         self.window = pygame.display.set_mode(size)
-        pygame.display.set_caption("Gh0stenstein")
+        pygame.display.set_caption("idk")
         self.screen = pygame.display.get_surface()
         # pixScreen = pygame.surfarray.pixels2d(screen)
         pygame.mouse.set_visible(False)
@@ -28,22 +25,31 @@ class Controller(object):
 
         self.f = pygame.font.SysFont(pygame.font.get_default_font(), 42)
 
-        self.cord = cord
-        self.wm = world_manager.WorldManager(self.world_map, self.sprite_positions, cord)
-
-    def load_map(self, world_map, sprite_positions):
         self.world_map = world_map
         self.sprite_positions = sprite_positions
 
-        self.wm = world_manager.WorldManager(world_map, sprite_positions, self.cord)
+        self.wm = world_manager.WorldManager(world_map, sprite_positions, cord=cord)
 
-    def frame(self):
+    def load_map(self, world_map, sprite_positions, camera):
+        self.world_map = world_map
+        self.sprite_positions = sprite_positions
+
+        self.wm = world_manager.WorldManager(world_map, sprite_positions, camera=camera)
+
+        print("---------------")
+        print("World Manager: " + hex(id(self.wm)))
+        print("Map:           " + hex(id(world_map)))
+        print("Sprites:       " + hex(id(sprite_positions)))
+        print("Camera:        " + hex(id(camera)))
+        print("---------------")
+
+    def frame(self, camera):
         self.clock.tick(30)
-        self.cord = (self.wm.camera.x, self.wm.camera.y, self.wm.camera.dirx,
-                     self.wm.camera.diry, self.wm.camera.planex, self.wm.camera.planey)
-        # 0: x, 1: y, 2: dirx, 3: diry, 4: planex 5: planey
+
+        world_map = self.world_map
 
         self.wm.draw(self.screen)
+        # self.wm.draw(self.screen).draw_sprites(camera)
 
         # timing for input and FPS counter
 
@@ -58,47 +64,90 @@ class Controller(object):
         rot_speed = frame_time * 2.0  # the constant value is in radians / second
 
         keys = pygame.key.get_pressed()
-        if keys[K_UP] or keys[K_w]:
+        if keys[K_w]:
             # move forward if no wall in front of you
-            move_x = self.cord[0] + self.cord[2] * move_speed
+            move_x = camera.x + camera.dirx * move_speed
 
-            if (self.world_map[int(move_x)][int(self.cord[1])] == 0
-                    and self.world_map[int(move_x + 0.1)][int(self.cord[1])] == 0):
-                self.wm.camera.x += self.cord[2] * move_speed
-            move_y = self.cord[1] + self.cord[3] * move_speed
+            if (world_map[int(move_x)][int(camera.y)] == 0
+                    and world_map[int(move_x + 0.1)][int(camera.y)] == 0):
+                camera.x += camera.dirx * move_speed
+            move_y = camera.y + camera.diry * move_speed
 
-            if (self.world_map[int(self.cord[0])][int(move_y)] == 0
-                    and self.world_map[int(self.cord[0])][int(move_y + 0.1)] == 0):
-                self.wm.camera.y += self.cord[3] * move_speed
+            if (world_map[int(camera.x)][int(move_y)] == 0
+                    and world_map[int(camera.x)][int(move_y + 0.1)] == 0):
+                camera.y += camera.diry * move_speed
 
-        if keys[K_DOWN] or keys[K_s]:
+        if keys[K_s]:
             # move backwards if no wall behind you
-            if (self.world_map[int(self.cord[0] - self.cord[2] * move_speed)]
-                    [int(self.cord[1])] == 0):
-                self.wm.camera.x -= self.cord[2] * move_speed
+            if (world_map[int(camera.x - camera.dirx * move_speed)]
+                    [int(camera.y)] == 0):
+                camera.x -= camera.dirx * move_speed
 
-            if (self.world_map[int(self.cord[0])]
-                    [int(self.cord[1] - self.cord[3] * move_speed)] == 0):
-                self.wm.camera.y -= self.cord[3] * move_speed
+            if (world_map[int(camera.x)]
+                    [int(camera.y - camera.diry * move_speed)] == 0):
+                camera.y -= camera.diry * move_speed
 
-        if (keys[K_RIGHT] and not keys[K_DOWN]) or (keys[K_LEFT] and keys[K_DOWN]) \
-                or (keys[K_d] and not keys[K_s]) or (keys[K_a] and keys[K_s]):
+        if (keys[K_d] and not keys[K_s]) or (keys[K_a] and keys[K_s]):
             # rotate to the right
             # both camera direction and camera plane must be rotated
-            old_dir_x = self.cord[2]
-            self.wm.camera.dirx = self.cord[2] * math.cos(- rot_speed) - self.cord[3] * math.sin(- rot_speed)
-            self.wm.camera.diry = old_dir_x * math.sin(- rot_speed) + self.cord[3] * math.cos(- rot_speed)
-            old_plane_x = self.cord[4]
-            self.wm.camera.planex = self.cord[4] * math.cos(- rot_speed) - self.cord[5] * math.sin(- rot_speed)
-            self.wm.camera.planey = old_plane_x * math.sin(- rot_speed) + self.cord[5] * math.cos(- rot_speed)
+            old_dir_x = camera.dirx
+            camera.dirx = camera.dirx * math.cos(- rot_speed) - camera.diry * math.sin(- rot_speed)
+            camera.diry = old_dir_x * math.sin(- rot_speed) + camera.diry * math.cos(- rot_speed)
+            old_plane_x = camera.planex
+            camera.planex = camera.planex * math.cos(-rot_speed) - camera.planey * math.sin(- rot_speed)
+            camera.planey = old_plane_x * math.sin(-rot_speed) + camera.planey * math.cos(- rot_speed)
 
-        if (keys[K_LEFT] and not keys[K_DOWN]) or (keys[K_RIGHT] and keys[K_DOWN]) \
-                or (keys[K_a] and not keys[K_s]) or (keys[K_d] and keys[K_s]):
+        if (keys[K_a] and not keys[K_s]) or (keys[K_d] and keys[K_s]):
             # rotate to the left
             # both camera direction and camera plane must be rotated
-            old_dir_x = self.cord[2]
-            self.wm.camera.dirx = self.cord[2] * math.cos(rot_speed) - self.cord[3] * math.sin(rot_speed)
-            self.wm.camera.diry = old_dir_x * math.sin(rot_speed) + self.cord[3] * math.cos(rot_speed)
-            old_plane_x = self.cord[4]
-            self.wm.camera.planex = self.cord[4] * math.cos(rot_speed) - self.cord[5] * math.sin(rot_speed)
-            self.wm.camera.planey = old_plane_x * math.sin(rot_speed) + self.cord[5] * math.cos(rot_speed)
+            old_dir_x = camera.dirx
+            camera.dirx = camera.dirx * math.cos(rot_speed) - camera.diry * math.sin(rot_speed)
+            camera.diry = old_dir_x * math.sin(rot_speed) + camera.diry * math.cos(rot_speed)
+            old_plane_x = camera.planex
+            camera.planex = camera.planex * math.cos(rot_speed) - camera.planey * math.sin(rot_speed)
+            camera.planey = old_plane_x * math.sin(rot_speed) + camera.planey * math.cos(rot_speed)
+
+        # Enemy controls
+
+        if keys[K_UP]:
+            # move forward if no wall in front of you
+            move_x = camera.x + camera.dirx * move_speed
+
+            if (world_map[int(move_x)][int(camera.y)] == 0
+                    and world_map[int(move_x + 0.1)][int(camera.y)] == 0):
+                camera.x += camera.dirx * move_speed
+            move_y = camera.y + camera.diry * move_speed
+
+            if (world_map[int(camera.x)][int(move_y)] == 0
+                    and self.world_map[int(camera.x)][int(move_y + 0.1)] == 0):
+                camera.y += camera.diry * move_speed
+
+        if keys[K_DOWN]:
+            # move backwards if no wall behind you
+            if (world_map[int(camera.x - camera.dirx * move_speed)]
+                    [int(camera.y)] == 0):
+                camera.x -= camera.dirx * move_speed
+
+            if (world_map[int(camera.x)]
+                    [int(camera.y - camera.diry * move_speed)] == 0):
+                camera.y -= camera.diry * move_speed
+
+        if (keys[K_RIGHT] and not keys[K_DOWN]) or (keys[K_LEFT] and keys[K_DOWN]):
+            # rotate to the right
+            # both camera direction and camera plane must be rotated
+            old_dir_x = camera.dirx
+            camera.dirx = camera.dirx * math.cos(- rot_speed) - camera.diry * math.sin(- rot_speed)
+            camera.diry = old_dir_x * math.sin(- rot_speed) + camera.diry * math.cos(- rot_speed)
+            old_plane_x = camera.planex
+            camera.planex = camera.planex * math.cos(- rot_speed) - camera.planey * math.sin(- rot_speed)
+            camera.planey = old_plane_x * math.sin(- rot_speed) + camera.planey * math.cos(- rot_speed)
+
+        if (keys[K_LEFT] and not keys[K_DOWN]) or (keys[K_RIGHT] and keys[K_DOWN]):
+            # rotate to the left
+            # both camera direction and camera plane must be rotated
+            old_dir_x = camera.dirx
+            camera.dirx = camera.dirx * math.cos(rot_speed) - camera.diry * math.sin(rot_speed)
+            camera.diry = old_dir_x * math.sin(rot_speed) + camera.diry * math.cos(rot_speed)
+            old_plane_x = camera.planex
+            camera.planex = camera.planex * math.cos(rot_speed) - camera.planey * math.sin(rot_speed)
+            camera.planey = old_plane_x * math.sin(rot_speed) + camera.planey * math.cos(rot_speed)
