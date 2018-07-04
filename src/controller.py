@@ -3,12 +3,11 @@ from pygame.locals import *
 import math
 import world_manager
 import time
-import sys
 
 
 class Controller(object):
 
-    def __init__(self, world_map, sprite_positions, cord=(22, 11.5, -1, 0, 0, .66)):
+    def __init__(self, world_map, sprite_positions, ai_sprite=None, cord=(22, 11.5, -1, 0, 0, .66)):
         self.t = time.clock()  # time of current frame
         self.old_time = 0.0  # time of previous frame
         pygame.mixer.init()
@@ -28,28 +27,28 @@ class Controller(object):
         self.world_map = world_map
         self.sprite_positions = sprite_positions
 
-        self.wm = world_manager.WorldManager(world_map, sprite_positions, cord=cord)
+        self.wm = world_manager.WorldManager(world_map, sprite_positions, cord=cord, ai_sprite=ai_sprite)
 
-    def load_map(self, world_map, sprite_positions, camera):
+    def load_map(self, world_map, sprite_positions, camera, ai_camera):
         self.world_map = world_map
         self.sprite_positions = sprite_positions
 
-        self.wm = world_manager.WorldManager(world_map, sprite_positions, camera=camera)
+        self.wm = world_manager.WorldManager(world_map, sprite_positions, camera=camera, ai_camera=ai_camera)
 
-        print("---------------")
+        print("-----------------------------")
         print("World Manager: " + hex(id(self.wm)))
         print("Map:           " + hex(id(world_map)))
         print("Sprites:       " + hex(id(sprite_positions)))
+        print("Ai Camera:     " + hex(id(ai_camera)))
         print("Camera:        " + hex(id(camera)))
-        print("---------------")
+        print("-----------------------------")
 
-    def frame(self, camera):
+    def frame(self, camera, ai_camera):
         self.clock.tick(30)
 
         world_map = self.world_map
 
         self.wm.draw(self.screen)
-        # self.wm.draw(self.screen).draw_sprites(camera)
 
         # timing for input and FPS counter
 
@@ -111,43 +110,46 @@ class Controller(object):
 
         if keys[K_UP]:
             # move forward if no wall in front of you
-            move_x = camera.x + camera.dirx * move_speed
+            move_x = ai_camera.x + ai_camera.dirx * move_speed
 
             if (world_map[int(move_x)][int(camera.y)] == 0
-                    and world_map[int(move_x + 0.1)][int(camera.y)] == 0):
-                camera.x += camera.dirx * move_speed
-            move_y = camera.y + camera.diry * move_speed
+                    and world_map[int(move_x + 0.1)][int(ai_camera.y)] == 0):
+                ai_camera.x += ai_camera.dirx * move_speed
+            move_y = ai_camera.y + ai_camera.diry * move_speed
 
-            if (world_map[int(camera.x)][int(move_y)] == 0
-                    and self.world_map[int(camera.x)][int(move_y + 0.1)] == 0):
-                camera.y += camera.diry * move_speed
+            if (world_map[int(ai_camera.x)][int(move_y)] == 0
+                    and world_map[int(ai_camera.x)][int(move_y + 0.1)] == 0):
+                ai_camera.y += ai_camera.diry * move_speed
 
         if keys[K_DOWN]:
             # move backwards if no wall behind you
-            if (world_map[int(camera.x - camera.dirx * move_speed)]
-                    [int(camera.y)] == 0):
-                camera.x -= camera.dirx * move_speed
+            if (world_map[int(ai_camera.x - ai_camera.dirx * move_speed)]
+                    [int(ai_camera.y)] == 0):
+                ai_camera.x -= ai_camera.dirx * move_speed
 
-            if (world_map[int(camera.x)]
-                    [int(camera.y - camera.diry * move_speed)] == 0):
-                camera.y -= camera.diry * move_speed
+            if (world_map[int(ai_camera.x)]
+                    [int(ai_camera.y - ai_camera.diry * move_speed)] == 0):
+                ai_camera.y -= ai_camera.diry * move_speed
 
         if (keys[K_RIGHT] and not keys[K_DOWN]) or (keys[K_LEFT] and keys[K_DOWN]):
             # rotate to the right
             # both camera direction and camera plane must be rotated
-            old_dir_x = camera.dirx
-            camera.dirx = camera.dirx * math.cos(- rot_speed) - camera.diry * math.sin(- rot_speed)
-            camera.diry = old_dir_x * math.sin(- rot_speed) + camera.diry * math.cos(- rot_speed)
-            old_plane_x = camera.planex
-            camera.planex = camera.planex * math.cos(- rot_speed) - camera.planey * math.sin(- rot_speed)
-            camera.planey = old_plane_x * math.sin(- rot_speed) + camera.planey * math.cos(- rot_speed)
+            old_dir_x = ai_camera.dirx
+            ai_camera.dirx = ai_camera.dirx * math.cos(- rot_speed) - ai_camera.diry * math.sin(- rot_speed)
+            ai_camera.diry = old_dir_x * math.sin(- rot_speed) + ai_camera.diry * math.cos(- rot_speed)
+            old_plane_x = ai_camera.planex
+            ai_camera.planex = ai_camera.planex * math.cos(- rot_speed) - ai_camera.planey * math.sin(- rot_speed)
+            ai_camera.planey = old_plane_x * math.sin(- rot_speed) + ai_camera.planey * math.cos(- rot_speed)
 
         if (keys[K_LEFT] and not keys[K_DOWN]) or (keys[K_RIGHT] and keys[K_DOWN]):
             # rotate to the left
             # both camera direction and camera plane must be rotated
-            old_dir_x = camera.dirx
-            camera.dirx = camera.dirx * math.cos(rot_speed) - camera.diry * math.sin(rot_speed)
-            camera.diry = old_dir_x * math.sin(rot_speed) + camera.diry * math.cos(rot_speed)
-            old_plane_x = camera.planex
-            camera.planex = camera.planex * math.cos(rot_speed) - camera.planey * math.sin(rot_speed)
-            camera.planey = old_plane_x * math.sin(rot_speed) + camera.planey * math.cos(rot_speed)
+            old_dir_x = ai_camera.dirx
+            ai_camera.dirx = ai_camera.dirx * math.cos(rot_speed) - ai_camera.diry * math.sin(rot_speed)
+            ai_camera.diry = old_dir_x * math.sin(rot_speed) + ai_camera.diry * math.cos(rot_speed)
+            old_plane_x = ai_camera.planex
+            ai_camera.planex = ai_camera.planex * math.cos(rot_speed) - ai_camera.planey * math.sin(rot_speed)
+            ai_camera.planey = old_plane_x * math.sin(rot_speed) + ai_camera.planey * math.cos(rot_speed)
+
+        ai_camera.sprite[0] = ai_camera.x
+        ai_camera.sprite[1] = ai_camera.y

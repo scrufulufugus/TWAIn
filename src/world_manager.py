@@ -10,7 +10,7 @@ tex_height = 64
 
 class WorldManager(object):
 
-    def __init__(self, world_map, sprite_positions, cord=None, camera=None):
+    def __init__(self, world_map, sprite_positions, cord=None, camera=None, ai_sprite=None, ai_camera=None):
         self.sprites = [
             load_image(pygame.image.load("pics/items/barrel.png").convert(), False, color_key=(0, 0, 0)),
             load_image(pygame.image.load("pics/items/pillar.png").convert(), False, color_key=(0, 0, 0)),
@@ -19,24 +19,23 @@ class WorldManager(object):
         ]
         self.background = None
         self.images = [
-              load_image(pygame.image.load("pics/walls/eagle.png").convert(), False),
-              load_image(pygame.image.load("pics/walls/redbrick.png").convert(), False),
-              load_image(pygame.image.load("pics/walls/purplestone.png").convert(), False),
-              load_image(pygame.image.load("pics/walls/greystone.png").convert(), False),
-              load_image(pygame.image.load("pics/walls/bluestone.png").convert(), False),
-              load_image(pygame.image.load("pics/walls/mossy.png").convert(), False),
-              load_image(pygame.image.load("pics/walls/wood.png").convert(), False),
-              load_image(pygame.image.load("pics/walls/colorstone.png").convert(), False),
-
-              load_image(pygame.image.load("pics/walls/eagle.png").convert(), True),
-              load_image(pygame.image.load("pics/walls/redbrick.png").convert(), True),
-              load_image(pygame.image.load("pics/walls/purplestone.png").convert(), True),
-              load_image(pygame.image.load("pics/walls/greystone.png").convert(), True),
-              load_image(pygame.image.load("pics/walls/bluestone.png").convert(), True),
-              load_image(pygame.image.load("pics/walls/mossy.png").convert(), True),
-              load_image(pygame.image.load("pics/walls/wood.png").convert(), True),
-              load_image(pygame.image.load("pics/walls/colorstone.png").convert(), True)
-              ]
+            load_image(pygame.image.load("pics/walls/eagle.png").convert(), False),
+            load_image(pygame.image.load("pics/walls/redbrick.png").convert(), False),
+            load_image(pygame.image.load("pics/walls/purplestone.png").convert(), False),
+            load_image(pygame.image.load("pics/walls/greystone.png").convert(), False),
+            load_image(pygame.image.load("pics/walls/bluestone.png").convert(), False),
+            load_image(pygame.image.load("pics/walls/mossy.png").convert(), False),
+            load_image(pygame.image.load("pics/walls/wood.png").convert(), False),
+            load_image(pygame.image.load("pics/walls/colorstone.png").convert(), False),
+            load_image(pygame.image.load("pics/walls/eagle.png").convert(), True),
+            load_image(pygame.image.load("pics/walls/redbrick.png").convert(), True),
+            load_image(pygame.image.load("pics/walls/purplestone.png").convert(), True),
+            load_image(pygame.image.load("pics/walls/greystone.png").convert(), True),
+            load_image(pygame.image.load("pics/walls/bluestone.png").convert(), True),
+            load_image(pygame.image.load("pics/walls/mossy.png").convert(), True),
+            load_image(pygame.image.load("pics/walls/wood.png").convert(), True),
+            load_image(pygame.image.load("pics/walls/colorstone.png").convert(), True)
+        ]
         if cord:
             x, y, dirx, diry, planex, planey = cord
             self.camera = Camera(x, y, dirx, diry, planex, planey)
@@ -44,6 +43,10 @@ class WorldManager(object):
             self.camera = camera
         else:
             self.camera = Camera(22, 11.5, -1, 0, 0, .66)
+        if ai_sprite:
+            self.ai_camera = AICamera(19.5, 11.5, -1, 0, 0, .66, ai_sprite)
+        elif ai_camera:
+            self.ai_camera = ai_camera
         self.world_map = world_map
         self.sprite_positions = sprite_positions
 
@@ -174,15 +177,15 @@ class WorldManager(object):
                 else:
                     return 1
 
-            sprite_positions.sort(key=functools.cmp_to_key(sprite_compare))
-            for sprite in self.sprite_positions:
+            sprite_sorted = sorted(sprite_positions, key=functools.cmp_to_key(sprite_compare))
+            for sprite in sprite_sorted:
                 # translate sprite position to relative to camera
                 sprite_x = sprite[0] - camera.x
                 sprite_y = sprite[1] - camera.y
 
                 # transform sprite with the inverse camera matrix
                 # [ self.camera.planex   self.camera.dirx ] -1 [ self.camera.diry - self.camera.dirx ]
-                # [               ]  =  1/(self.camera.planex*self.camera.diry-self.camera.dirx*self.camera.planey) *   [                 ]
+                # [            ]  =  1/(self.camera.planex*self.camera.diry-self.camera.dirx*self.camera.planey) *   [                 ]
                 # [ self.camera.planey   self.camera.diry ]    [ -self.camera.planey  self.camera.planex ]
 
                 # required for correct matrix multiplication
@@ -220,9 +223,6 @@ class WorldManager(object):
 
         draw_sprites(self.sprite_positions, self.camera)
 
-        def enemy():
-            pass
-
 
 class Camera(object):
     def __init__(self, x, y, dirx, diry, planex, planey):
@@ -232,6 +232,13 @@ class Camera(object):
         self.diry = float(diry)
         self.planex = float(planex)
         self.planey = float(planey)
+
+
+class AICamera(Camera):
+    def __init__(self, x, y, dirx, diry, planex, planey, sprite):
+        super().__init__(x, y, dirx, diry, planex, planey)
+        sprite[0], sprite[1] = self.x, self.y
+        self.sprite = sprite
 
 
 def load_image(image, darken, color_key=None):
