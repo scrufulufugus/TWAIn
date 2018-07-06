@@ -3,7 +3,7 @@ from pygame.locals import *
 import math
 import functools
 import sys
-
+import numpy as np
 tex_width = 64
 tex_height = 64
 
@@ -11,6 +11,7 @@ tex_height = 64
 class WorldManager(object):
 
     def __init__(self, world_map, sprite_positions, cord=None, camera=None, ai_sprite=None, ai_camera=None):
+        # self.ray_map = self.ray_dist_calc(world_map)
         self.sprites = [
             load_image(pygame.image.load("pics/items/barrel.png").convert(), False, color_key=(0, 0, 0)),
             load_image(pygame.image.load("pics/items/pillar.png").convert(), False, color_key=(0, 0, 0)),
@@ -34,7 +35,7 @@ class WorldManager(object):
             load_image(pygame.image.load("pics/walls/bluestone.png").convert(), True),
             load_image(pygame.image.load("pics/walls/mossy.png").convert(), True),
             load_image(pygame.image.load("pics/walls/wood.png").convert(), True),
-            load_image(pygame.image.load("pics/walls/colorstone.png").convert(), True)
+            load_image(pygame.image.load("pics/walls/colorstone.png").convert(), True),
         ]
         if cord:
             x, y, dirx, diry, planex, planey = cord
@@ -49,6 +50,32 @@ class WorldManager(object):
             self.ai_camera = ai_camera
         self.world_map = world_map
         self.sprite_positions = sprite_positions
+
+    @staticmethod
+    def ray_dist_calc(world_map):
+        width = len(world_map)
+        height = len(world_map[0])
+        ray_dist_map = np.array([[width * height] * height] * width)
+        to_explore = []
+        for x in range(width):
+            for y in range(height):
+                if world_map[x][y] != 0:
+                    to_explore.append((x, y))
+                    ray_dist_map[x][y] = 0
+        directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        while len(to_explore) > 0:
+            x, y = to_explore.pop(0)
+            for dx, dy in directions:
+                neighbour_x, neighbour_y = x + dx, y + dy
+                if 0 <= neighbour_x < width and 0 <= neighbour_y < height and ray_dist_map[x][y] + 1 < \
+                        ray_dist_map[neighbour_x][neighbour_y]:
+                    ray_dist_map[neighbour_x][neighbour_y] = ray_dist_map[x][y] + 1
+                    to_explore.append((neighbour_x, neighbour_y))
+        for row in ray_dist_map:
+            for item in row:
+                print(('0' if len(str(item)) < 2 else '') + str(item), end=' ')
+            print('.')
+        return ray_dist_map
 
     def draw(self, surface):
         w = surface.get_width()
@@ -84,7 +111,7 @@ class WorldManager(object):
             step_x = 0
             step_y = 0
 
-            hit = 0   # was there a wall hit?
+            # hit = 0   # was there a wall hit?
             side = 0  # was a NS or a EW wall hit?
 
             # calculate step and initial sideDist
@@ -102,11 +129,14 @@ class WorldManager(object):
                 step_y = 1
                 side_dist_y = (map_y + 1.0 - ray_pos_y) * delta_dist_y
 
-            # perform DDA
-            while hit == 0:
-                # jump to next map square, OR in x - direction, OR in y - direction
+            # perform DDA (Digital Differential Analysis)
+            render_distance = 50
+            for i in range(render_distance):
+                # steps = self.ray_map[map_x][map_y]
+                # map_x += steps * step_x
+                # map_y += steps * step_y
+                # i += steps
                 if side_dist_x < side_dist_y:
-
                     side_dist_x += delta_dist_x
                     map_x += step_x
                     side = 0
@@ -116,10 +146,10 @@ class WorldManager(object):
                     side = 1
 
                 # Check if ray has hit a wall
-                try:
+                if 0 <= map_x < len(self.world_map) and 0 <= map_y < len(self.world_map[0]):
                     if self.world_map[map_x][map_y] > 0:
-                        hit = 1
-                except IndexError:
+                        break
+                else:
                     print("Out of bounds")
                     sys.exit()
             # Calculate distance projected on camera direction (oblique distance will give fisheye effect !)
@@ -129,8 +159,9 @@ class WorldManager(object):
                 perp_wall_dist = abs((map_y - ray_pos_y + (1 - step_y) / 2) / ray_dir_y)
 
             # Calculate height of line to draw on surface
-            if perp_wall_dist == 0:
-                perp_wall_dist = 0.000001
+            # if perp_wall_dist == 0:
+            #     perp_wall_dist = 0.000001
+            perp_wall_dist = max(0.00001, perp_wall_dist)
             line_height = abs(int(h / perp_wall_dist))
 
             # calculate lowest and highest pixel to fill in current stripe

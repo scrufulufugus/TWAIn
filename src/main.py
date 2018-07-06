@@ -1,46 +1,42 @@
-# from controller import Controller
 import controller
 import pygame
 import sys
 from pygame.locals import *
 from maps import *
+import random
+import numpy as np
 
-sprite_positions = [
-    [0, 0, 3],  # AI must be mutable
+world_map = np.zeros((70, 70), np.int64)
+world_map[:, 0] = 2
+world_map[:, -1] = 2
+world_map[0, :] = 2
+world_map[-1, :] = 2
 
-    (20.5, 11.5, 2),  # green light in front of playerstart
-    # green lights in every room
-    (18.5, 4.5, 2),
-    (10.0, 4.5, 2),
-    (10.0, 12.5, 2),
-    (3.5, 6.5, 2),
-    (3.5, 20.5, 2),
-    (3.5, 14.5, 2),
-    (14.5, 20.5, 2),
+world_map = world_map.tolist()
 
-    # row of pillars in front of wall: fisheye test
-    (18.5, 10.5, 1),
-    (18.5, 11.5, 1),
-    (18.5, 12.5, 1),
+game = controller.Controller(world_map, sprite_positions, ai_sprite=sprite_positions[0], cord=random.choice(player_start))
 
-    # some barrels around the map
-    (21.5, 1.5, 0),
-    (15.5, 1.5, 0),
-    (16.0, 1.8, 0),
-    (16.2, 1.2, 0),
-    (3.5, 2.5, 0),
-    (9.5, 15.5, 0),
-    (10.0, 15.1, 0),
-    (10.5, 15.8, 0)
-]
 
-sprite_zero = []
+def get_collision(camera_one, camera_two):
+    def get_collider(camera, box_size=1):
+        return [camera.x - (box_size / 2), camera.x + (box_size / 2),
+                camera.y - (box_size / 2), camera.y + (box_size / 2)]
 
-game = controller.Controller(world_map_empty, sprite_positions, ai_sprite=sprite_positions[0])
+    collider_one = get_collider(camera_one)
+    collider_two = get_collider(camera_two)
+    if collider_one[0] <= collider_two[0] <= collider_one[1] or \
+            collider_one[0] <= collider_two[1] <= collider_one[1]:
+        if collider_one[2] <= collider_two[2] <= collider_one[3] or \
+                collider_one[2] <= collider_two[3] <= collider_one[3]:
+            return True
+    return False
 
-space = 0
 
 while True:
+
+    if get_collision(game.wm.camera, game.wm.ai_camera):
+        print("Collision")
+
     for event in pygame.event.get():
         if event.type == QUIT:
             sys.exit()
@@ -57,9 +53,5 @@ while True:
             pass
         else:
             pass
-
-    # if space < 70:
-    #     world_map_large[space][3] = 1
-    # space += 1
 
     game.frame(game.wm.camera, game.wm.ai_camera)

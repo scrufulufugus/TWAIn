@@ -8,17 +8,14 @@ import time
 class Controller(object):
 
     def __init__(self, world_map, sprite_positions, ai_sprite=None, cord=(22, 11.5, -1, 0, 0, .66)):
-        self.t = time.clock()  # time of current frame
-        self.old_time = 0.0  # time of previous frame
         pygame.mixer.init()
         # pygame.mixer.music.load("Muse_Uprising.mp3")
         # pygame.mixer.music.play(-1)
         size = w, h = 1920, 1080
         pygame.init()
-        self.window = pygame.display.set_mode(size)
+        pygame.display.set_mode(size)
         pygame.display.set_caption("idk")
         self.screen = pygame.display.get_surface()
-        # pixScreen = pygame.surfarray.pixels2d(screen)
         pygame.mouse.set_visible(False)
         self.clock = pygame.time.Clock()
 
@@ -63,6 +60,7 @@ class Controller(object):
         rot_speed = frame_time * 2.0  # the constant value is in radians / second
 
         keys = pygame.key.get_pressed()
+
         if keys[K_w]:
             # move forward if no wall in front of you
             move_x = camera.x + camera.dirx * move_speed
