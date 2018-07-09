@@ -63,6 +63,7 @@ class Controller(object):
         # speed modifiers
         move_speed = frame_time * 3.0  # the constant value is in squares / second
         rot_speed = frame_time * 2.0  # the constant value is in radians / second
+        ai_move_speed = frame_time * 6.0
 
         keys = pygame.key.get_pressed()
 
@@ -113,26 +114,26 @@ class Controller(object):
 
         if keys[K_UP]:
             # move forward if no wall in front of you
-            move_x = ai_camera.x + ai_camera.dirx * move_speed
+            move_x = ai_camera.x + ai_camera.dirx * ai_move_speed
 
             if (world_map[int(move_x)][int(camera.y)] == 0
                     and world_map[int(move_x + 0.1)][int(ai_camera.y)] == 0):
-                ai_camera.x += ai_camera.dirx * move_speed
-            move_y = ai_camera.y + ai_camera.diry * move_speed
+                ai_camera.x += ai_camera.dirx * ai_move_speed
+            move_y = ai_camera.y + ai_camera.diry * ai_move_speed
 
             if (world_map[int(ai_camera.x)][int(move_y)] == 0
                     and world_map[int(ai_camera.x)][int(move_y + 0.1)] == 0):
-                ai_camera.y += ai_camera.diry * move_speed
+                ai_camera.y += ai_camera.diry * ai_move_speed
 
         if keys[K_DOWN]:
             # move backwards if no wall behind you
-            if (world_map[int(ai_camera.x - ai_camera.dirx * move_speed)]
+            if (world_map[int(ai_camera.x - ai_camera.dirx * ai_move_speed)]
                     [int(ai_camera.y)] == 0):
-                ai_camera.x -= ai_camera.dirx * move_speed
+                ai_camera.x -= ai_camera.dirx * ai_move_speed
 
             if (world_map[int(ai_camera.x)]
-                    [int(ai_camera.y - ai_camera.diry * move_speed)] == 0):
-                ai_camera.y -= ai_camera.diry * move_speed
+                    [int(ai_camera.y - ai_camera.diry * ai_move_speed)] == 0):
+                ai_camera.y -= ai_camera.diry * ai_move_speed
 
         if (keys[K_RIGHT] and not keys[K_DOWN]) or (keys[K_LEFT] and keys[K_DOWN]):
             # rotate to the right
