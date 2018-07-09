@@ -16,7 +16,7 @@ class WorldManager(object):
             load_image(pygame.image.load("pics/items/barrel.png").convert(), False, color_key=(0, 0, 0)),
             load_image(pygame.image.load("pics/items/pillar.png").convert(), False, color_key=(0, 0, 0)),
             load_image(pygame.image.load("pics/items/greenlight.png").convert(), False, color_key=(0, 0, 0)),
-            load_image(pygame.image.load("pics/items/pillar.png").convert(), True, color_key=(0, 0, 0))
+            load_image(pygame.image.load("pics/mobs/gabe.png").convert(), True, color_key=(0, 0, 0))
         ]
         self.background = None
         self.images = [
@@ -45,7 +45,7 @@ class WorldManager(object):
         else:
             self.camera = Camera(22, 11.5, -1, 0, 0, .66)
         if ai_sprite:
-            self.ai_camera = AICamera(19.5, 11.5, -1, 0, 0, .66, ai_sprite)
+            self.ai_camera = AICamera(ai_sprite[0], ai_sprite[1], -1, 0, 0, .66, ai_sprite)
         elif ai_camera:
             self.ai_camera = ai_camera
         self.world_map = world_map
@@ -71,10 +71,10 @@ class WorldManager(object):
                         ray_dist_map[neighbour_x][neighbour_y]:
                     ray_dist_map[neighbour_x][neighbour_y] = ray_dist_map[x][y] + 1
                     to_explore.append((neighbour_x, neighbour_y))
-        for row in ray_dist_map:
-            for item in row:
-                print(('0' if len(str(item)) < 2 else '') + str(item), end=' ')
-            print('.')
+        # for row in ray_dist_map:
+        #     for item in row:
+        #         print(('0' if len(str(item)) < 2 else '') + str(item), end=' ')
+        #     print('.')
         return ray_dist_map
 
     def draw(self, surface):
@@ -225,7 +225,8 @@ class WorldManager(object):
                 transform_x = inv_det * (camera.diry * sprite_x - camera.dirx * sprite_y)
                 # this is actually the depth inside the surface, that what Z is in 3D
                 transform_y = inv_det * (-camera.planey * sprite_x + camera.planex * sprite_y)
-
+                if transform_y == 0:
+                    transform_y = 0.000001
                 sprite_surface_x = int((w / 2) * (1 + transform_x / transform_y))
 
                 # calculate height of the sprite on surface

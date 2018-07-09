@@ -3,6 +3,8 @@ from pygame.locals import *
 import math
 import world_manager
 import time
+import numpy as np
+import asyncio
 
 
 class Controller(object):
@@ -47,16 +49,19 @@ class Controller(object):
 
         self.wm.draw(self.screen)
 
+        map_x, map_y = int(camera.x), int(camera.y)
+
         # timing for input and FPS counter
 
         frame_time = float(self.clock.get_time()) / 1000.0  # frame_time is the time this frame has taken, in seconds
         t = time.clock()
+        # print(self.clock.get_fps())
         text = self.f.render(str(round(self.clock.get_fps())), False, (255, 255, 0))
         self.screen.blit(text, text.get_rect(), text.get_rect())
         pygame.display.flip()
 
         # speed modifiers
-        move_speed = frame_time * 6.0  # the constant value is in squares / second
+        move_speed = frame_time * 3.0  # the constant value is in squares / second
         rot_speed = frame_time * 2.0  # the constant value is in radians / second
 
         keys = pygame.key.get_pressed()
