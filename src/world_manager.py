@@ -4,6 +4,7 @@ import math
 import functools
 import sys
 import numpy as np
+
 tex_width = 64
 tex_height = 64
 
@@ -51,6 +52,7 @@ class WorldManager(object):
         self.world_map = world_map
         self.sprite_positions = sprite_positions
 
+    # Dalton's attempt to rewrite DDA by creating a ray map
     @staticmethod
     def ray_dist_calc(world_map):
         width = len(world_map)
@@ -76,6 +78,63 @@ class WorldManager(object):
         #         print(('0' if len(str(item)) < 2 else '') + str(item), end=' ')
         #     print('.')
         return ray_dist_map
+
+    # draw sprites
+    def draw_sprites(self, z_buffer, surface, w, h):
+        camera = self.camera
+        sprite_positions = self.sprite_positions
+
+        # function to sort sprites
+        def sprite_compare(s1, s2):
+            s1_dist = math.sqrt((s1[0] - camera.x) ** 2 + (s1[1] - camera.y) ** 2)
+            s2_dist = math.sqrt((s2[0] - camera.x) ** 2 + (s2[1] - camera.y) ** 2)
+            if s1_dist > s2_dist:
+                return -1
+            elif s1_dist == s2_dist:
+                return 0
+            else:
+                return 1
+
+        sprite_sorted = sorted(sprite_positions, key=functools.cmp_to_key(sprite_compare))
+        for sprite in sprite_sorted:
+            # Translate sprite position to relative to camera
+            sprite_x = sprite[0] - camera.x
+            sprite_y = sprite[1] - camera.y
+
+            # Required for correct matrix multiplication
+            inv_det = 1.0 / (camera.planex * camera.diry - camera.dirx * camera.planey)
+
+            transform_x = inv_det * (camera.diry * sprite_x - camera.dirx * sprite_y)
+            # This is actually the depth inside the surface, that what Z is in 3D
+            transform_y = inv_det * (-camera.planey * sprite_x + camera.planex * sprite_y)
+            if transform_y == 0:
+                transform_y = 0.000001
+            sprite_surface_x = int((w / 2) * (1 + transform_x / transform_y))
+
+            # Calculate height of the sprite on surface
+            # using "transform_y" instead of the real distance prevents fisheye
+            sprite_height = abs(int(h / transform_y))
+            # Calculate lowest and highest pixel to fill in current stripe
+            draw_start_y = -sprite_height / 2 + h / 2
+            # draw_end_y = sprite_height / 2 + h / 2
+
+            # Calculate width of the sprite
+            sprite_width = abs(int(h / transform_y))
+            draw_start_x = -sprite_width / 2 + sprite_surface_x
+            draw_end_x = sprite_width / 2 + sprite_surface_x
+
+            if sprite_height < 1000:
+                for stripe in range(int(draw_start_x), int(draw_end_x)):
+                    tex_x = int(
+                        256 * (stripe - (-sprite_width / 2 + sprite_surface_x)) * tex_width / sprite_width) / 256
+                    # The conditions in the if are:
+                    #  1) it's in front of camera plane so you don't see things behind you
+                    #  2) it's on the surface (left)
+                    #  3) it's on the surface (right)
+                    #  4) ZBuffer, with perpendicular distance
+                    if transform_y > 0 and stripe > 0 and stripe < w and transform_y < z_buffer[stripe]:
+                        surface.blit(pygame.transform.scale(self.sprites[sprite[2]][int(tex_x)],
+                                                            (1, sprite_height)), (stripe, draw_start_y))
 
     def draw(self, surface):
         w = surface.get_width()
@@ -150,8 +209,10 @@ class WorldManager(object):
                     if self.world_map[map_x][map_y] > 0:
                         break
                 else:
+                    # Just give up on map leak
                     print("Out of bounds")
                     sys.exit()
+
             # Calculate distance projected on camera direction (oblique distance will give fisheye effect !)
             if side == 0:
                 perp_wall_dist = abs((map_x - ray_pos_x + (1 - step_x) / 2) / ray_dir_x)
@@ -164,15 +225,14 @@ class WorldManager(object):
             perp_wall_dist = max(0.00001, perp_wall_dist)
             line_height = abs(int(h / perp_wall_dist))
 
-            # calculate lowest and highest pixel to fill in current stripe
+            # Calculate lowest and highest pixel to fill in current stripe
             draw_start = - line_height / 2 + h / 2
             draw_end = line_height / 2 + h / 2
 
-            # texturing calculations
+            # Texturing calculations
             tex_num = self.world_map[map_x][map_y] - 1  # 1 subtracted from it so that texture 0 can be used!
 
-            # calculate value of wall_x
-            wall_x = 0  # where exactly the wall was hit
+            # Calculate value of wall_x (where exactly the wall was hit)
             if side == 1:
                 wall_x = ray_pos_x + ((map_y - ray_pos_y + (1 - step_y) / 2) / ray_dir_y) * ray_dir_x
             else:
@@ -183,7 +243,7 @@ class WorldManager(object):
             tex_x = int(wall_x * float(tex_width))
             if side == 0 and ray_dir_x > 0:
                 tex_x = tex_width - tex_x - 1
-            if side == 1 and ray_dir_y < 0:
+            elif side == 1 and ray_dir_y < 0:
                 tex_x = tex_width - tex_x - 1
 
             if side == 1:
@@ -194,66 +254,7 @@ class WorldManager(object):
             surface.blit(pygame.transform.scale(self.images[tex_num][tex_x], (1, line_height)), (x, draw_start))
             z_buffer.append(perp_wall_dist)
 
-        # draw sprites
-        def draw_sprites(sprite_positions, camera):
-
-            # function to sort sprites
-            def sprite_compare(s1, s2):
-                s1_dist = math.sqrt((s1[0] - camera.x) ** 2 + (s1[1] - camera.y) ** 2)
-                s2_dist = math.sqrt((s2[0] - camera.x) ** 2 + (s2[1] - camera.y) ** 2)
-                if s1_dist > s2_dist:
-                    return -1
-                elif s1_dist == s2_dist:
-                    return 0
-                else:
-                    return 1
-
-            sprite_sorted = sorted(sprite_positions, key=functools.cmp_to_key(sprite_compare))
-            for sprite in sprite_sorted:
-                # translate sprite position to relative to camera
-                sprite_x = sprite[0] - camera.x
-                sprite_y = sprite[1] - camera.y
-
-                # transform sprite with the inverse camera matrix
-                # [ self.camera.planex   self.camera.dirx ] -1 [ self.camera.diry - self.camera.dirx ]
-                # [            ]  =  1/(self.camera.planex*self.camera.diry-self.camera.dirx*self.camera.planey) *   [                 ]
-                # [ self.camera.planey   self.camera.diry ]    [ -self.camera.planey  self.camera.planex ]
-
-                # required for correct matrix multiplication
-                inv_det = 1.0 / (camera.planex * camera.diry - camera.dirx * camera.planey)
-
-                transform_x = inv_det * (camera.diry * sprite_x - camera.dirx * sprite_y)
-                # this is actually the depth inside the surface, that what Z is in 3D
-                transform_y = inv_det * (-camera.planey * sprite_x + camera.planex * sprite_y)
-                if transform_y == 0:
-                    transform_y = 0.000001
-                sprite_surface_x = int((w / 2) * (1 + transform_x / transform_y))
-
-                # calculate height of the sprite on surface
-                # using "transform_y" instead of the real distance prevents fisheye
-                sprite_height = abs(int(h / transform_y))
-                # calculate lowest and highest pixel to fill in current stripe
-                draw_start_y = -sprite_height / 2 + h / 2
-                draw_end_y = sprite_height / 2 + h / 2
-
-                # calculate width of the sprite
-                sprite_width = abs(int(h / transform_y))
-                draw_start_x = -sprite_width / 2 + sprite_surface_x
-                draw_end_x = sprite_width / 2 + sprite_surface_x
-
-                if sprite_height < 1000:
-                    for stripe in range(int(draw_start_x), int(draw_end_x)):
-                        tex_x = int(256 * (stripe - (-sprite_width / 2 + sprite_surface_x)) * tex_width / sprite_width) / 256
-                        # the conditions in the if are:
-                        #  1) it's in front of camera plane so you don't see things behind you
-                        #  2) it's on the surface (left)
-                        #  3) it's on the surface (right)
-                        #  4) ZBuffer, with perpendicular distance
-                        if transform_y > 0 and stripe > 0 and stripe < w and transform_y < z_buffer[stripe]:
-                            surface.blit(pygame.transform.scale(self.sprites[sprite[2]][int(tex_x)],
-                                                                (1, sprite_height)), (stripe, draw_start_y))
-
-        draw_sprites(self.sprite_positions, self.camera)
+        self.draw_sprites(z_buffer, surface, w, h)
 
 
 class Camera(object):

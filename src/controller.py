@@ -3,8 +3,6 @@ from pygame.locals import *
 import math
 import world_manager
 import time
-import numpy as np
-import asyncio
 
 
 class Controller(object):
@@ -49,8 +47,6 @@ class Controller(object):
 
         self.wm.draw(self.screen)
 
-        map_x, map_y = int(camera.x), int(camera.y)
-
         # timing for input and FPS counter
 
         frame_time = float(self.clock.get_time()) / 1000.0  # frame_time is the time this frame has taken, in seconds
@@ -60,15 +56,16 @@ class Controller(object):
         self.screen.blit(text, text.get_rect(), text.get_rect())
         pygame.display.flip()
 
-        # speed modifiers
+        # Speed modifiers
         move_speed = frame_time * 3.0  # the constant value is in squares / second
         rot_speed = frame_time * 2.0  # the constant value is in radians / second
         ai_move_speed = frame_time * 6.0
 
+        # Get pressed keys
         keys = pygame.key.get_pressed()
 
         if keys[K_w]:
-            # move forward if no wall in front of you
+            # Move forward if no wall in front of you
             move_x = camera.x + camera.dirx * move_speed
 
             if (world_map[int(move_x)][int(camera.y)] == 0
@@ -81,7 +78,7 @@ class Controller(object):
                 camera.y += camera.diry * move_speed
 
         if keys[K_s]:
-            # move backwards if no wall behind you
+            # Move backwards if no wall behind you
             if (world_map[int(camera.x - camera.dirx * move_speed)]
                     [int(camera.y)] == 0):
                 camera.x -= camera.dirx * move_speed
@@ -91,8 +88,8 @@ class Controller(object):
                 camera.y -= camera.diry * move_speed
 
         if (keys[K_d] and not keys[K_s]) or (keys[K_a] and keys[K_s]):
-            # rotate to the right
-            # both camera direction and camera plane must be rotated
+            # Rotate to the right
+            # Both camera direction and camera plane must be rotated
             old_dir_x = camera.dirx
             camera.dirx = camera.dirx * math.cos(- rot_speed) - camera.diry * math.sin(- rot_speed)
             camera.diry = old_dir_x * math.sin(- rot_speed) + camera.diry * math.cos(- rot_speed)
@@ -101,8 +98,8 @@ class Controller(object):
             camera.planey = old_plane_x * math.sin(-rot_speed) + camera.planey * math.cos(- rot_speed)
 
         if (keys[K_a] and not keys[K_s]) or (keys[K_d] and keys[K_s]):
-            # rotate to the left
-            # both camera direction and camera plane must be rotated
+            # Rotate to the left
+            # Both camera direction and camera plane must be rotated
             old_dir_x = camera.dirx
             camera.dirx = camera.dirx * math.cos(rot_speed) - camera.diry * math.sin(rot_speed)
             camera.diry = old_dir_x * math.sin(rot_speed) + camera.diry * math.cos(rot_speed)
@@ -113,7 +110,7 @@ class Controller(object):
         # Enemy controls
 
         if keys[K_UP]:
-            # move forward if no wall in front of you
+            # Move forward if no wall in front of you
             move_x = ai_camera.x + ai_camera.dirx * ai_move_speed
 
             if (world_map[int(move_x)][int(camera.y)] == 0
@@ -126,7 +123,7 @@ class Controller(object):
                 ai_camera.y += ai_camera.diry * ai_move_speed
 
         if keys[K_DOWN]:
-            # move backwards if no wall behind you
+            # Move backwards if no wall behind you
             if (world_map[int(ai_camera.x - ai_camera.dirx * ai_move_speed)]
                     [int(ai_camera.y)] == 0):
                 ai_camera.x -= ai_camera.dirx * ai_move_speed
@@ -136,8 +133,8 @@ class Controller(object):
                 ai_camera.y -= ai_camera.diry * ai_move_speed
 
         if (keys[K_RIGHT] and not keys[K_DOWN]) or (keys[K_LEFT] and keys[K_DOWN]):
-            # rotate to the right
-            # both camera direction and camera plane must be rotated
+            # Rotate to the right
+            # Both camera direction and camera plane must be rotated
             old_dir_x = ai_camera.dirx
             ai_camera.dirx = ai_camera.dirx * math.cos(- rot_speed) - ai_camera.diry * math.sin(- rot_speed)
             ai_camera.diry = old_dir_x * math.sin(- rot_speed) + ai_camera.diry * math.cos(- rot_speed)
@@ -146,8 +143,8 @@ class Controller(object):
             ai_camera.planey = old_plane_x * math.sin(- rot_speed) + ai_camera.planey * math.cos(- rot_speed)
 
         if (keys[K_LEFT] and not keys[K_DOWN]) or (keys[K_RIGHT] and keys[K_DOWN]):
-            # rotate to the left
-            # both camera direction and camera plane must be rotated
+            # Rotate to the left
+            # Both camera direction and camera plane must be rotated
             old_dir_x = ai_camera.dirx
             ai_camera.dirx = ai_camera.dirx * math.cos(rot_speed) - ai_camera.diry * math.sin(rot_speed)
             ai_camera.diry = old_dir_x * math.sin(rot_speed) + ai_camera.diry * math.cos(rot_speed)
