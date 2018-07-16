@@ -17,7 +17,7 @@ class WorldManager(object):
             load_image(pygame.image.load("pics/items/barrel.png").convert(), False, color_key=(0, 0, 0)),
             load_image(pygame.image.load("pics/items/pillar.png").convert(), False, color_key=(0, 0, 0)),
             load_image(pygame.image.load("pics/items/greenlight.png").convert(), False, color_key=(0, 0, 0)),
-            load_image(pygame.image.load("pics/mobs/gabe.png").convert(), True, color_key=(0, 0, 0))
+            load_image(pygame.image.load("pics/mobs/cozmo.png").convert(), True, color_key=(0, 0, 0))
         ]
         self.background = None
         self.images = [
@@ -132,7 +132,8 @@ class WorldManager(object):
                     #  2) it's on the surface (left)
                     #  3) it's on the surface (right)
                     #  4) ZBuffer, with perpendicular distance
-                    if transform_y > 0 and stripe > 0 and stripe < w and transform_y < z_buffer[stripe]:
+                    # if transform_y > 0 and stripe > 0 and stripe < w and transform_y < z_buffer[stripe]:
+                    if 0 < stripe < w and 0 < transform_y < z_buffer[stripe]:
                         surface.blit(pygame.transform.scale(self.sprites[sprite[2]][int(tex_x)],
                                                             (1, sprite_height)), (stripe, draw_start_y))
 

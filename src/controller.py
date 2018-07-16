@@ -11,7 +11,7 @@ class Controller(object):
         pygame.mixer.init()
         # pygame.mixer.music.load("Muse_Uprising.mp3")
         # pygame.mixer.music.play(-1)
-        size = w, h = 1920, 1080
+        size = 1920, 1080
         pygame.init()
         pygame.display.set_mode(size)
         pygame.display.set_caption("idk")
@@ -40,12 +40,14 @@ class Controller(object):
         print("Camera:        " + hex(id(camera)))
         print("-----------------------------")
 
-    def frame(self, camera, ai_camera):
+    def frame(self, camera, ai_camera, squares):
         self.clock.tick(30)
 
         world_map = self.world_map
 
         self.wm.draw(self.screen)
+
+        pressed = [0, 0, 0, 0]
 
         # timing for input and FPS counter
 
@@ -59,13 +61,14 @@ class Controller(object):
         # Speed modifiers
         move_speed = frame_time * 3.0  # the constant value is in squares / second
         rot_speed = frame_time * 2.0  # the constant value is in radians / second
-        ai_move_speed = frame_time * 6.0
+        ai_move_speed = frame_time * 1.0
 
         # Get pressed keys
         keys = pygame.key.get_pressed()
 
         if keys[K_w]:
             # Move forward if no wall in front of you
+            pressed[0] = 1.0
             move_x = camera.x + camera.dirx * move_speed
 
             if (world_map[int(move_x)][int(camera.y)] == 0
@@ -79,6 +82,7 @@ class Controller(object):
 
         if keys[K_s]:
             # Move backwards if no wall behind you
+            pressed[1] = 1.0
             if (world_map[int(camera.x - camera.dirx * move_speed)]
                     [int(camera.y)] == 0):
                 camera.x -= camera.dirx * move_speed
@@ -89,6 +93,7 @@ class Controller(object):
 
         if (keys[K_d] and not keys[K_s]) or (keys[K_a] and keys[K_s]):
             # Rotate to the right
+            pressed[2] = 1.0
             # Both camera direction and camera plane must be rotated
             old_dir_x = camera.dirx
             camera.dirx = camera.dirx * math.cos(- rot_speed) - camera.diry * math.sin(- rot_speed)
@@ -99,6 +104,7 @@ class Controller(object):
 
         if (keys[K_a] and not keys[K_s]) or (keys[K_d] and keys[K_s]):
             # Rotate to the left
+            pressed[3] = 1.0
             # Both camera direction and camera plane must be rotated
             old_dir_x = camera.dirx
             camera.dirx = camera.dirx * math.cos(rot_speed) - camera.diry * math.sin(rot_speed)
@@ -108,20 +114,25 @@ class Controller(object):
             camera.planey = old_plane_x * math.sin(rot_speed) + camera.planey * math.cos(rot_speed)
 
         # Enemy controls
+        # if squares[0][0] - squares[1][0] != 0:
 
-        if keys[K_UP]:
-            # Move forward if no wall in front of you
-            move_x = ai_camera.x + ai_camera.dirx * ai_move_speed
+        # if keys[K_UP]:
+        # Move forward if no wall in front of you
+        move_x = ai_camera.x + (squares[0] + .5 - round(ai_camera.x, 1)) * ai_move_speed
+        # move_x = ai_camera.x + ai_camera.dirx * ai_move_speed
 
-            if (world_map[int(move_x)][int(camera.y)] == 0
-                    and world_map[int(move_x + 0.1)][int(ai_camera.y)] == 0):
-                ai_camera.x += ai_camera.dirx * ai_move_speed
-            move_y = ai_camera.y + ai_camera.diry * ai_move_speed
+        if (world_map[int(move_x)][int(camera.y)] == 0
+                and world_map[int(move_x + 0.1)][int(ai_camera.y)] == 0):
+            ai_camera.x += (squares[0] + .5 - round(ai_camera.x, 1)) * ai_move_speed
+        move_y = ai_camera.y + (squares[1] + .5 - round(ai_camera.y, 1)) * ai_move_speed
 
-            if (world_map[int(ai_camera.x)][int(move_y)] == 0
-                    and world_map[int(ai_camera.x)][int(move_y + 0.1)] == 0):
-                ai_camera.y += ai_camera.diry * ai_move_speed
+        if (world_map[int(ai_camera.x)][int(move_y)] == 0
+                and world_map[int(ai_camera.x)][int(move_y + 0.1)] == 0):
+            ai_camera.y += (squares[1] + .5 - round(ai_camera.y, 1)) * ai_move_speed
 
+        # print("Gabe Tracker: ({}, {}) moving to {}".format(round(ai_camera.x, 1), round(ai_camera.y, 1), squares))
+
+        '''
         if keys[K_DOWN]:
             # Move backwards if no wall behind you
             if (world_map[int(ai_camera.x - ai_camera.dirx * ai_move_speed)]
@@ -151,6 +162,9 @@ class Controller(object):
             old_plane_x = ai_camera.planex
             ai_camera.planex = ai_camera.planex * math.cos(rot_speed) - ai_camera.planey * math.sin(rot_speed)
             ai_camera.planey = old_plane_x * math.sin(rot_speed) + ai_camera.planey * math.cos(rot_speed)
+        '''
 
         ai_camera.sprite[0] = ai_camera.x
         ai_camera.sprite[1] = ai_camera.y
+
+        return pressed
