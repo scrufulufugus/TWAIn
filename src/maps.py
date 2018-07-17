@@ -117,7 +117,7 @@ def neigh(v, m, row, col):
 
 
 sprite_positions = [
-    [19.5, 1.5, 3],  # AI must be mutable
+    [69.5, 69.5, 3],  # AI must be mutable
 
     # (20.5, 11.5, 2),  # green light in front of playerstart
     # green lights in every room

@@ -37,7 +37,7 @@ def parallel_path(cam_x, cam_y, ai_x, ai_y):
 
 # Static Vars
 width, height = 70, 70
-history_len = 10
+history_len = 20
 
 map_maze = maze(width, height).tolist()
 game = controller.Controller(map_maze, sprite_positions,
@@ -51,10 +51,10 @@ tf.reset_default_graph()
 
 
 class Model:
-    def __init__(self, history_len=10, hidden_size=128, map_max_size=(70, 70),
+    def __init__(self, history_length=10, hidden_size=128, map_max_size=(70, 70),
                  optimizer=tf.train.AdamOptimizer(learning_rate=0.001)):
-        self.loc_history = tf.placeholder(tf.float32, [None, history_len, 2])
-        loc_history = tf.reshape(self.loc_history, [-1, history_len * 2])
+        self.loc_history = tf.placeholder(tf.float32, [None, history_length, 2])
+        loc_history = tf.reshape(self.loc_history, [-1, history_length * 2])
         self.distance = tf.placeholder(tf.float32, [None, ])
         distance = tf.expand_dims(self.distance, axis=1)
         self.controls = tf.placeholder(tf.float32, [None, 4])
@@ -109,6 +109,8 @@ while True:
                 m.direction: [item[3] for item in game_buffer],
                 m.player_loc: [item[4] for item in game_buffer],
             }
+            loss = np.mean(sess.run(m.loss, feed_dict))
+            print('Average loss:', loss)
             sess.run(m.train, feed_dict)
             game_buffer = []
 
@@ -136,7 +138,11 @@ while True:
 
     # Checks for collision between player and ai
     if get_collision(game.wm.camera, game.wm.ai_camera):
+        # print("You Suck!")
+        # sys.exit()
         print("Collision")
+    if map_x in (35, 36) and map_y in (35, 36):
+        print("You Win!")
 
     # Standard keys setup
     for event in pygame.event.get():
@@ -151,10 +157,15 @@ while True:
                 map_maze = maze(width, height).tolist()
                 game.load_map(map_maze, sprite_positions, game.wm.camera, ai_camera=game.wm.ai_camera)
             if event.key == K_TAB:
+                if path:
+                    steps = len(path)
+                else:
+                    steps = "unknown"
                 print("------------------------")
                 print("FPS is {}".format(int(game.clock.get_fps())))
-                print("Location is: {}, {}".format(int(game.wm.camera.x), int(game.wm.camera.y)))
-                print("End is {} steps away".format(len(path)))
+                print("Location is: ({}, {})".format(map_x, map_y))
+                print("AI is at ({}, {})".format(int(game.wm.ai_camera.x), int(game.wm.ai_camera.y)))
+                print("AI is {} steps away".format(steps))
                 print("Last {} steps are: {}".format(history_len, path_history))
                 print("------------------------")
         elif event.type == KEYUP:
@@ -165,21 +176,24 @@ while True:
     if path and len(path) > 1:
         next_square = path[-2]
     else:
-        next_square = (0, 0)
+        next_square = None
     # Run controller frame
     keys_pressed = game.frame(game.wm.camera, game.wm.ai_camera, next_square)
     # print(keys_pressed)
+    if path:
+        # run model, predict location
+        if len(path_history) >= history_len/2:
+            feed_dict = {
+                m.loc_history: [path_history[-(history_len//2):]],
+                m.distance: [len(path)],
+                m.controls: [keys_pressed],
+                m.direction: [(game.wm.camera.dirx, game.wm.camera.diry)]
+            }
+            outputs = sess.run(m.output, feed_dict)
+            # print("({}, {}) = ({}, {})?".format(outputs[0][0], outputs[0][1], map_x, map_y))
 
-    # run model, predict location
-    if len(path_history) >= 10:
-        feed_dict = {
-            m.loc_history: [path_history],
-            m.distance: [len(path)],
-            m.controls: [keys_pressed],
-            m.direction: [(game.wm.camera.dirx, game.wm.camera.diry)]
-        }
-        outputs = sess.run(m.output, feed_dict)
-        print(outputs, '=', (map_x, map_y), '?')
-    # keep track of state inputs used (previous state inputs)
-    previous_inputs = [np.array(path_history), len(path), np.array(keys_pressed), np.array([game.wm.camera.dirx, game.wm.camera.diry])]
+        # keep track of state inputs used (previous state inputs)
+        previous_inputs = [np.array(path_history[-(history_len//2):]), len(path), np.array(keys_pressed), np.array([game.wm.camera.dirx, game.wm.camera.diry])]
+    else:
+        previous_inputs = []
 

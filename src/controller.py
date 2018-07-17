@@ -9,7 +9,7 @@ class Controller(object):
 
     def __init__(self, world_map, sprite_positions, ai_sprite=None, cord=(22, 11.5, -1, 0, 0, .66)):
         pygame.mixer.init()
-        # pygame.mixer.music.load("Muse_Uprising.mp3")
+        # pygame.mixer.music.load("Thomas_Tank_stereo.mp3")
         # pygame.mixer.music.play(-1)
         size = 1920, 1080
         pygame.init()
@@ -61,7 +61,7 @@ class Controller(object):
         # Speed modifiers
         move_speed = frame_time * 3.0  # the constant value is in squares / second
         rot_speed = frame_time * 2.0  # the constant value is in radians / second
-        ai_move_speed = frame_time * 1.0
+        ai_move_speed = frame_time * 3.0
 
         # Get pressed keys
         keys = pygame.key.get_pressed()
@@ -114,23 +114,21 @@ class Controller(object):
             camera.planey = old_plane_x * math.sin(rot_speed) + camera.planey * math.cos(rot_speed)
 
         # Enemy controls
-        # if squares[0][0] - squares[1][0] != 0:
+        if squares:
+            # Move forward if no wall in front of you
+            move_x = ai_camera.x + (squares[0] + .5 - round(ai_camera.x, 1)) * ai_move_speed
+            # move_x = ai_camera.x + ai_camera.dirx * ai_move_speed
 
-        # if keys[K_UP]:
-        # Move forward if no wall in front of you
-        move_x = ai_camera.x + (squares[0] + .5 - round(ai_camera.x, 1)) * ai_move_speed
-        # move_x = ai_camera.x + ai_camera.dirx * ai_move_speed
+            if (world_map[int(move_x)][int(ai_camera.y)] == 0
+                    and world_map[int(move_x + 0.1)][int(ai_camera.y)] == 0):
+                ai_camera.x += (squares[0] + .5 - round(ai_camera.x, 1)) * ai_move_speed
+            move_y = ai_camera.y + (squares[1] + .5 - round(ai_camera.y, 1)) * ai_move_speed
 
-        if (world_map[int(move_x)][int(camera.y)] == 0
-                and world_map[int(move_x + 0.1)][int(ai_camera.y)] == 0):
-            ai_camera.x += (squares[0] + .5 - round(ai_camera.x, 1)) * ai_move_speed
-        move_y = ai_camera.y + (squares[1] + .5 - round(ai_camera.y, 1)) * ai_move_speed
+            if (world_map[int(ai_camera.x)][int(move_y)] == 0
+                    and world_map[int(ai_camera.x)][int(move_y + 0.1)] == 0):
+                ai_camera.y += (squares[1] + .5 - round(ai_camera.y, 1)) * ai_move_speed
 
-        if (world_map[int(ai_camera.x)][int(move_y)] == 0
-                and world_map[int(ai_camera.x)][int(move_y + 0.1)] == 0):
-            ai_camera.y += (squares[1] + .5 - round(ai_camera.y, 1)) * ai_move_speed
-
-        # print("Gabe Tracker: ({}, {}) moving to {}".format(round(ai_camera.x, 1), round(ai_camera.y, 1), squares))
+            # print("Gabe Tracker: ({}, {}) moving to {}".format(round(ai_camera.x, 1), round(ai_camera.y, 1), squares))
 
         '''
         if keys[K_DOWN]:

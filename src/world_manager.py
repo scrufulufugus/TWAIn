@@ -190,7 +190,7 @@ class WorldManager(object):
                 side_dist_y = (map_y + 1.0 - ray_pos_y) * delta_dist_y
 
             # perform DDA (Digital Differential Analysis)
-            render_distance = 50
+            render_distance = 40
             for i in range(render_distance):
                 # steps = self.ray_map[map_x][map_y]
                 # map_x += steps * step_x
