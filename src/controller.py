@@ -9,17 +9,18 @@ class Controller(object):
 
     def __init__(self, world_map, sprite_positions, ai_sprite=None, cord=(22, 11.5, -1, 0, 0, .66)):
         pygame.mixer.init()
-        # pygame.mixer.music.load("Thomas_Tank_stereo.mp3")
-        # pygame.mixer.music.play(-1)
+        pygame.mixer.music.load("Thomas_Tank_stereo.mp3")
+        pygame.mixer.music.play(-1)
         size = 1920, 1080
         pygame.init()
         pygame.display.set_mode(size)
         pygame.display.set_caption("idk")
+        pygame.display.toggle_fullscreen()
         self.screen = pygame.display.get_surface()
         pygame.mouse.set_visible(False)
         self.clock = pygame.time.Clock()
 
-        self.f = pygame.font.SysFont(pygame.font.get_default_font(), 42)
+        self.f = pygame.font.SysFont(pygame.font.get_default_font(), 64)
 
         self.world_map = world_map
         self.sprite_positions = sprite_positions
@@ -40,7 +41,7 @@ class Controller(object):
         print("Camera:        " + hex(id(camera)))
         print("-----------------------------")
 
-    def frame(self, camera, ai_camera, squares):
+    def frame(self, camera, ai_camera, squares, text):
         self.clock.tick(30)
 
         world_map = self.world_map
@@ -54,7 +55,7 @@ class Controller(object):
         frame_time = float(self.clock.get_time()) / 1000.0  # frame_time is the time this frame has taken, in seconds
         t = time.clock()
         # print(self.clock.get_fps())
-        text = self.f.render(str(round(self.clock.get_fps())), False, (255, 255, 0))
+        # text = self.f.render(str(round(self.clock.get_fps())), False, (255, 255, 0))
         self.screen.blit(text, text.get_rect(), text.get_rect())
         pygame.display.flip()
 
@@ -129,38 +130,6 @@ class Controller(object):
                 ai_camera.y += (squares[1] + .5 - round(ai_camera.y, 1)) * ai_move_speed
 
             # print("Gabe Tracker: ({}, {}) moving to {}".format(round(ai_camera.x, 1), round(ai_camera.y, 1), squares))
-
-        '''
-        if keys[K_DOWN]:
-            # Move backwards if no wall behind you
-            if (world_map[int(ai_camera.x - ai_camera.dirx * ai_move_speed)]
-                    [int(ai_camera.y)] == 0):
-                ai_camera.x -= ai_camera.dirx * ai_move_speed
-
-            if (world_map[int(ai_camera.x)]
-                    [int(ai_camera.y - ai_camera.diry * ai_move_speed)] == 0):
-                ai_camera.y -= ai_camera.diry * ai_move_speed
-
-        if (keys[K_RIGHT] and not keys[K_DOWN]) or (keys[K_LEFT] and keys[K_DOWN]):
-            # Rotate to the right
-            # Both camera direction and camera plane must be rotated
-            old_dir_x = ai_camera.dirx
-            ai_camera.dirx = ai_camera.dirx * math.cos(- rot_speed) - ai_camera.diry * math.sin(- rot_speed)
-            ai_camera.diry = old_dir_x * math.sin(- rot_speed) + ai_camera.diry * math.cos(- rot_speed)
-            old_plane_x = ai_camera.planex
-            ai_camera.planex = ai_camera.planex * math.cos(- rot_speed) - ai_camera.planey * math.sin(- rot_speed)
-            ai_camera.planey = old_plane_x * math.sin(- rot_speed) + ai_camera.planey * math.cos(- rot_speed)
-
-        if (keys[K_LEFT] and not keys[K_DOWN]) or (keys[K_RIGHT] and keys[K_DOWN]):
-            # Rotate to the left
-            # Both camera direction and camera plane must be rotated
-            old_dir_x = ai_camera.dirx
-            ai_camera.dirx = ai_camera.dirx * math.cos(rot_speed) - ai_camera.diry * math.sin(rot_speed)
-            ai_camera.diry = old_dir_x * math.sin(rot_speed) + ai_camera.diry * math.cos(rot_speed)
-            old_plane_x = ai_camera.planex
-            ai_camera.planex = ai_camera.planex * math.cos(rot_speed) - ai_camera.planey * math.sin(rot_speed)
-            ai_camera.planey = old_plane_x * math.sin(rot_speed) + ai_camera.planey * math.cos(rot_speed)
-        '''
 
         ai_camera.sprite[0] = ai_camera.x
         ai_camera.sprite[1] = ai_camera.y

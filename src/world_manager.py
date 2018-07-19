@@ -14,29 +14,17 @@ class WorldManager(object):
     def __init__(self, world_map, sprite_positions, cord=None, camera=None, ai_sprite=None, ai_camera=None):
         # self.ray_map = self.ray_dist_calc(world_map)
         self.sprites = [
-            load_image(pygame.image.load("pics/items/barrel.png").convert(), False, color_key=(0, 0, 0)),
-            load_image(pygame.image.load("pics/items/pillar.png").convert(), False, color_key=(0, 0, 0)),
-            load_image(pygame.image.load("pics/items/greenlight.png").convert(), False, color_key=(0, 0, 0)),
+            load_image(pygame.image.load("pics/items/barrel.png").convert(), True, color_key=(0, 0, 0)),
+            load_image(pygame.image.load("pics/items/pillar.png").convert(), True, color_key=(0, 0, 0)),
+            load_image(pygame.image.load("pics/items/greenlight.png").convert(), True, color_key=(0, 0, 0)),
             load_image(pygame.image.load("pics/mobs/cozmo.png").convert(), True, color_key=(0, 0, 0))
         ]
         self.background = None
         self.images = [
-            load_image(pygame.image.load("pics/walls/eagle.png").convert(), False),
-            load_image(pygame.image.load("pics/walls/redbrick.png").convert(), False),
-            load_image(pygame.image.load("pics/walls/purplestone.png").convert(), False),
-            load_image(pygame.image.load("pics/walls/greystone.png").convert(), False),
-            load_image(pygame.image.load("pics/walls/bluestone.png").convert(), False),
-            load_image(pygame.image.load("pics/walls/mossy.png").convert(), False),
-            load_image(pygame.image.load("pics/walls/wood.png").convert(), False),
-            load_image(pygame.image.load("pics/walls/colorstone.png").convert(), False),
-            load_image(pygame.image.load("pics/walls/eagle.png").convert(), True),
-            load_image(pygame.image.load("pics/walls/redbrick.png").convert(), True),
-            load_image(pygame.image.load("pics/walls/purplestone.png").convert(), True),
-            load_image(pygame.image.load("pics/walls/greystone.png").convert(), True),
-            load_image(pygame.image.load("pics/walls/bluestone.png").convert(), True),
-            load_image(pygame.image.load("pics/walls/mossy.png").convert(), True),
-            load_image(pygame.image.load("pics/walls/wood.png").convert(), True),
-            load_image(pygame.image.load("pics/walls/colorstone.png").convert(), True),
+            load_image(pygame.image.load("pics/walls/hellbrick.png").convert(), False),
+            load_image(pygame.image.load("pics/walls/fog.png").convert(), False),
+            load_image(pygame.image.load("pics/walls/hellbrick.png").convert(), True),
+            load_image(pygame.image.load("pics/walls/fog.png").convert(), True)
         ]
         if cord:
             x, y, dirx, diry, planex, planey = cord
@@ -231,7 +219,7 @@ class WorldManager(object):
             draw_end = line_height / 2 + h / 2
 
             # Texturing calculations
-            tex_num = self.world_map[map_x][map_y] - 1  # 1 subtracted from it so that texture 0 can be used!
+            tex_num = self.world_map[map_x][map_y] - 2  # 1 subtracted from it so that texture 0 can be used!
 
             # Calculate value of wall_x (where exactly the wall was hit)
             if side == 1:
@@ -248,7 +236,7 @@ class WorldManager(object):
                 tex_x = tex_width - tex_x - 1
 
             if side == 1:
-                tex_num += 8
+                tex_num += int(len(self.images) / 2)
             if line_height > 10000:
                 line_height = 10000
                 draw_start = -10000 / 2 + h/2

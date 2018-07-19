@@ -86,7 +86,10 @@ game_buffer = []
 previous_inputs = []
 sess = tf.Session()
 m = Model()
+text = game.f.render("", False, (0, 0, 0))
 sess.run(tf.global_variables_initializer())
+
+
 while True:
     # Get player location
     map_x, map_y = int(game.wm.camera.x), int(game.wm.camera.y)
@@ -140,8 +143,10 @@ while True:
     if get_collision(game.wm.camera, game.wm.ai_camera):
         # print("You Suck!")
         # sys.exit()
+        text = game.f.render("YOU LOSE", False, (255, 0, 0))
         print("Collision")
     if map_x in (35, 36) and map_y in (35, 36):
+        text = game.f.render("YOU WIN", False, (0, 255, 0))
         print("You Win!")
 
     # Standard keys setup
@@ -178,7 +183,7 @@ while True:
     else:
         next_square = None
     # Run controller frame
-    keys_pressed = game.frame(game.wm.camera, game.wm.ai_camera, next_square)
+    keys_pressed = game.frame(game.wm.camera, game.wm.ai_camera, next_square, text)
     # print(keys_pressed)
     if path:
         # run model, predict location
