@@ -9,13 +9,13 @@ class Controller(object):
 
     def __init__(self, world_map, sprite_positions, ai_sprite=None, cord=(22, 11.5, -1, 0, 0, .66)):
         pygame.mixer.init()
-        pygame.mixer.music.load("Thomas_Tank_stereo.mp3")
-        pygame.mixer.music.play(-1)
+        # pygame.mixer.music.load("Thomas_Tank_stereo.mp3")
+        # pygame.mixer.music.play(-1)
         size = 1920, 1080
         pygame.init()
         pygame.display.set_mode(size)
         pygame.display.set_caption("idk")
-        pygame.display.toggle_fullscreen()
+        # pygame.display.toggle_fullscreen()
         self.screen = pygame.display.get_surface()
         pygame.mouse.set_visible(False)
         self.clock = pygame.time.Clock()
@@ -62,7 +62,7 @@ class Controller(object):
         # Speed modifiers
         move_speed = frame_time * 3.0  # the constant value is in squares / second
         rot_speed = frame_time * 2.0  # the constant value is in radians / second
-        ai_move_speed = frame_time * 3.0
+        ai_move_speed = frame_time * 3.2
 
         # Get pressed keys
         keys = pygame.key.get_pressed()

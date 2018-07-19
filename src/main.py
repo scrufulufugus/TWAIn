@@ -35,18 +35,6 @@ def parallel_path(cam_x, cam_y, ai_x, ai_y):
     return p
 
 
-# Static Vars
-width, height = 70, 70
-history_len = 20
-
-map_maze = maze(width, height).tolist()
-game = controller.Controller(map_maze, sprite_positions,
-                             sprite_positions[0], random.choice(player_start))
-pathing_q = Queue()
-pathing_process = None
-path_history = []  # np.zeros([10, 2], np.int8).tolist()
-old_map_x, old_map_y = int(game.wm.camera.x), int(game.wm.camera.y)
-
 tf.reset_default_graph()
 
 
@@ -80,13 +68,29 @@ class Model:
         self.train = optimizer.minimize(self.loss)
 
 
-# Array full of (old_state_data, actual_player_position)
+# Static Vars
+width, height = 70, 70
+history_len = 20
+
+map_maze = maze(width, height).tolist()
+game = controller.Controller(map_maze, sprite_positions,
+                             sprite_positions[0], random.choice(player_start))
+text = game.f.render("", False, (0, 0, 0))
+pathing_q = Queue()
+pathing_process = None
+old_map_x, old_map_y = int(game.wm.camera.x), int(game.wm.camera.y)
+frozen = 0
+
+# Arrays
 path = []
 game_buffer = []
 previous_inputs = []
+super_loss = []
+path_history = []
+
 sess = tf.Session()
 m = Model()
-text = game.f.render("", False, (0, 0, 0))
+
 sess.run(tf.global_variables_initializer())
 
 
@@ -114,6 +118,7 @@ while True:
             }
             loss = np.mean(sess.run(m.loss, feed_dict))
             print('Average loss:', loss)
+            super_loss.append(loss)
             sess.run(m.train, feed_dict)
             game_buffer = []
 
@@ -135,6 +140,8 @@ while True:
     else:
         if 'outputs' in locals():
             dest_x, dest_y = outputs[0][0], outputs[0][1]
+            if map_maze[int(dest_x)][int(dest_y)] != 0:
+                dest_x, dest_y = game.wm.camera.x, game.wm.camera.y
         else:
             dest_x, dest_y = game.wm.camera.x, game.wm.camera.y
         pathing_process = parallel_path(dest_x, dest_y, game.wm.ai_camera.x, game.wm.ai_camera.y)
@@ -147,7 +154,7 @@ while True:
         print("Collision")
     if map_x in (35, 36) and map_y in (35, 36):
         text = game.f.render("YOU WIN", False, (0, 255, 0))
-        print("You Win!")
+        print("Win")
 
     # Standard keys setup
     for event in pygame.event.get():
@@ -156,6 +163,7 @@ while True:
         elif event.type == KEYDOWN:
             if event.key == K_ESCAPE or event.key == K_q:
                 sess.close()
+                print("Total average loss is {}, with {} steps".format(np.mean(super_loss), len(super_loss)))
                 print("Closing")
                 sys.exit()
             if event.key == K_n:
@@ -165,13 +173,13 @@ while True:
                 if path:
                     steps = len(path)
                 else:
-                    steps = "unknown"
+                    steps = "NaN"
                 print("------------------------")
                 print("FPS is {}".format(int(game.clock.get_fps())))
                 print("Location is: ({}, {})".format(map_x, map_y))
                 print("AI is at ({}, {})".format(int(game.wm.ai_camera.x), int(game.wm.ai_camera.y)))
                 print("AI is {} steps away".format(steps))
-                print("Last {} steps are: {}".format(history_len, path_history))
+                # print("Last {} steps are: {}".format(history_len, path_history))
                 print("------------------------")
         elif event.type == KEYUP:
             pass
@@ -180,8 +188,16 @@ while True:
 
     if path and len(path) > 1:
         next_square = path[-2]
+        frozen = 0
     else:
         next_square = None
+        frozen += 1
+        print("frozen {}x".format(frozen))
+        
+    if frozen > 30:
+        print("Reset AI position")
+        game.wm.ai_camera.x, game.wm.ai_camera.y = 1.5, 1.5
+
     # Run controller frame
     keys_pressed = game.frame(game.wm.camera, game.wm.ai_camera, next_square, text)
     # print(keys_pressed)
