@@ -8,7 +8,7 @@ import time
 class Controller(object):
 
     def __init__(self, world_map, sprite_positions, ai_sprite=None, cord=(22, 11.5, -1, 0, 0, .66)):
-        pygame.mixer.init()
+        #pygame.mixer.init()
         # pygame.mixer.music.load("Thomas_Tank_stereo.mp3")
         # pygame.mixer.music.play(-1)
         size = 1920, 1080
